@@ -1,4 +1,5 @@
 // const fs = require('fs');
+const { LegacyESLint } = require('eslint/use-at-your-own-risk');
 const Tour = require('./../models/tourModel');
 
 // const tours = JSON.parse(
@@ -30,20 +31,32 @@ exports.getTours = async (req, res) => {
   console.log(req.query);
   // FOR FILTERING
   try {
-    // 1-BUILD THE QUERY
+    //*************************** */ 1-BUILD THE QUERY
+    //  ****1A-FILTERING
     const queryObj = { ...req.query };
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
     excludedFields.forEach((el) => delete queryObj[el]);
-    // * ADVANCED FILTERING
+
+    // *****1B- ADVANCED FILTERING
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    const query = Tour.find(JSON.parse(queryStr));
+    let query = Tour.find(JSON.parse(queryStr));
     console.log(req.query, queryObj);
     console.log(query);
     console.log(queryStr);
-    // 2.EXECUTE QUERY
+
+    // ***** 2-SORTING
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(',').join(' ');
+      console.log(sortBy);
+      query = query.sort(sortBy);
+    } else {
+      query = query.sort('-createdAt');
+    }
+
+    //**************************** */ 2.EXECUTE QUERY
     const tours = await query;
-    // 3. SEND RESPONSE
+    //**************************** */ 3. SEND RESPONSE
     res.status(200).json({
       status: 'success',
       result: tours.length,
