@@ -200,3 +200,36 @@ exports.createTour = async (req, res) => {
   //   },
   // );
 };
+
+// ************ GET TOUR STATUS
+exports.getTourStatus = async (req, res) => {
+  try {
+    const status = await Tour.aggregate([
+      { $match: { ratingsAverage: { $gte: 4.5 } } },
+      {
+        $group: {
+          _id: { $toUpper: '$difficulty' }, //_id: null, in one group //
+          numTours: { $sum: 1 },
+          numRating: { $sum: '$ratingsQuantity' },
+          avgRating: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+      { $sort: { avgPrice: 1 } },
+      { $match: { _id: { $ne: 'EASY' } } },
+    ]);
+    res.status(201).json({
+      status: 'success',
+      data: {
+        status,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error,
+    });
+  }
+};
